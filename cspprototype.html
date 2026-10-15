@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>School Attendance Prototype</title>
+
+  <!-- Styles -->
+  <style>
+    /* Base reset and body */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 15px Arial, sans-serif;
+      background: #f3f6fb;
+      color: #1e293b;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(120deg, #17365d, #3478ee);
+      color: white;
+      padding: 28px max(18px, calc((100% - 1100px)/2));
+    }
+    header small {
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      opacity: .8;
+    }
+    h1 { margin: 10px 0 6px; }
+    header p { margin: 0; opacity: .9; }
+
+    /* Layout containers */
+    .wrap { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+    .bar, .panel, .card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 13px;
+      box-shadow: 0 4px 15px #0f172a08;
+    }
+
+    /* Top bar fields */
+    .bar {
+      padding: 16px;
+      display: flex;
+      gap: 12px;
+      align-items: end;
+      flex-wrap: wrap;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 155px;
+    }
+    .field label {
+      font-size: 11px;
+      font-weight: bold;
+      color: #64748b;
+    }
+    input, select {
+      font: inherit;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      min-width: 0;
+    }
+
+    /* Buttons */
+    button {
+      cursor: pointer;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 13px;
+      font-weight: bold;
+    }
+    .primary { background: #2f6fed; color: white; }
+    .secondary { background: #eaf0ff; color: #234ea8; }
+    .outline { background: white; border: 1px solid #cbd5e1; color: #334155; }
+    .danger { background: #fff0f0; color: #b42323; }
+
+    /* Cards summary */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .card { padding: 16px; }
+    .label { color: #64748b; font-size: 13px; }
+    .num { font-size: 28px; font-weight: bold; margin: 8px 0; }
+
+    /* Attendance panel */
+    .panel { overflow: hidden; }
+    .panelhead {
+      padding: 17px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .panelhead h2 { font-size: 18px; margin: 0; }
+    .panelhead p { font-size: 13px; color: #64748b; margin: 5px 0 0; }
+    .search { max-width: 260px; width: 100%; }
+    .scroll { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; min-width: 680px; }
+    th, td {
+      text-align: left;
+      padding: 13px 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    th {
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 11px;
+      letter-spacing: .5px;
+    }
+    .student { font-weight: bold; }
+    .sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+    /* Status badges */
+    .badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .present { background: #dcfce7; color: #166534; }
+    .absent { background: #fee2e2; color: #991b1b; }
+    .none { background: #f1f5f9; color: #64748b; }
+    .mini { padding: 7px 9px; font-size: 12px; margin-right: 4px; }
+
+    /* Footer */
+    .foot {
+      padding: 14px 17px;
+      color: #64748b;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* Action buttons */
+    .actions { display: flex; gap: 9px; flex-wrap: wrap; margin: 15px 0; }
+
+    /* Note box */
+    .note {
+      margin: 15px 0 25px;
+      background: #fff8e6;
+      border: 1px solid #f3d58a;
+      color: #805500;
+      padding: 13px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* Dialog */
+    dialog {
+      border: 0;
+      border-radius: 13px;
+      padding: 22px;
+      width: min(420px, calc(100% - 24px));
+      box-shadow: 0 20px 60px #0004;
+    }
+    dialog::backdrop { background: #0f172a88; }
+    .modalfield {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 12px 0;
+    }
+    .modalfield label {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: bold;
+    }
+    .end { display: flex; justify-content: end; gap: 8px; margin-top: 16px; }
+
+    /* Responsive */
+    @media(max-width:650px){
+      .cards { grid-template-columns: repeat(2,1fr); }
+      .num { font-size: 23px; }
+      .search { max-width:none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <small>School Administration · Prototype</small>
+    <h1>Student Attendance</h1>
+    <p>A simple digital register for daily attendance and student records.</p>
+  </header>
+
+  <!-- Main content -->
+  <main class="wrap">
+
+    <!-- Top bar -->
+    <section class="bar">
+      <div class="field">
+        <label>SCHOOL NAME</label>
+        <input id="school" value="Chittivalasa Government High School">
+      </div>
+      <div class="field">
+        <label>CLASS / SECTION</label>
+        <select id="class">
+          <option>All</option>
+          <option>8-A</option>
+          <option>9-A</option>
+          <option>10-A</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>ATTENDANCE DATE</label>
+        <input type="date" id="date">
+      </div>
+      <button class="primary" id="save">Save Attendance</button>
+    </section>
+
+    <!-- Summary cards -->
+    <section class="cards">
+      <div class="card">
+        <div class="label">Total Students</div>
+        <div class="num" id="total">0</div>
+        <div class="label">Selected class</div>
+      </div>
+      <div class="card">
+        <div class="label">Present</div>
+        <div class="num" id="pc">0</div>
+        <div class="label">Marked present</div>
+      </div>
+      <div class="card">
+        <div class="label">Absent</div>
+        <div class="num" id="ac">0</div>
+        <div class="label">Marked absent</div>
+      </div>
+      <div class="card">
+        <div class="label">Attendance Rate</div>
+        <div class="num" id="rate">—</div>
+        <div class="label">Of marked students</div>
+      </div>
+    </section>
+
+        <!-- Attendance register -->
+    <section class="panel">
+      <div class="panelhead">
+        <div>
+          <h2>Class Attendance Register</h2>
+          <p>Mark each student present or absent, then save.</p>
+        </div>
+        <input class="search" id="search" placeholder="Search student or roll number">
+      </div>
+
+      <!-- Table of students -->
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Roll Number</th>
+              <th>Class</th>
+              <th>Status</th>
+              <th>Mark Attendance</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+
+      <!-- Footer message -->
+      <div class="foot">
+        <span id="statusmsg">Ready to mark attendance.</span>
+        <span>Demo data is stored in this browser.</span>
+      </div>
+    </section>
+
+    <!-- Action buttons -->
+    <div class="actions">
+      <button class="secondary" id="allpresent">Mark All Present</button>
+      <button class="outline" id="clear">Clear Today's Marks</button>
+      <button class="outline" id="add">+ Add Student</button>
+      <button class="outline" id="export">Export CSV</button>
+      <button class="danger" id="reset">Reset Demo Data</button>
+    </div>
+
+    <!-- Note -->  </main>
+
+  <!-- Add Student Dialog -->
+  <dialog id="dlg">
+    <form id="form">
+      <h2>Add Student</h2>
+      <div class="modalfield">
+        <label>STUDENT NAME</label>
+        <input id="name" required>
+      </div>
+      <div class="modalfield">
+        <label>ROLL NUMBER</label>
+        <input id="roll" required>
+      </div>
+      <div class="modalfield">
+        <label>CLASS / SECTION</label>
+        <select id="newclass">
+          <option>8-A</option>
+          <option>9-A</option>
+          <option>10-A</option>
+        </select>
+      </div>
+      <div class="end">
+        <button type="button" class="outline" id="cancel">Cancel</button>
+        <button class="primary">Add Student</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- JavaScript -->
+  <script>
+    // Initial demo student data
+    const initial = [
+      {id:1, name:'Ananya Kumari', roll:'8A-001', cls:'8-A'},
+      {id:2, name:'Ravi Kumar', roll:'8A-002', cls:'8-A'},
+      {id:3, name:'Sravani Devi', roll:'8A-003', cls:'8-A'},
+      {id:4, name:'Mohammed Sameer', roll:'8A-004', cls:'8-A'},
+      {id:5, name:'Lakshmi Prasad', roll:'9A-001', cls:'9-A'},
+      {id:6, name:'Kiran Kumar', roll:'9A-002', cls:'9-A'},
+      {id:7, name:'Divya Sri', roll:'9A-003', cls:'9-A'},
+      {id:8, name:'Sai Teja', roll:'10A-001', cls:'10-A'},
+      {id:9, name:'Pooja Rani', roll:'10A-002', cls:'10-A'}
+    ];
+
+    // Load from localStorage or use initial
+    let students = JSON.parse(localStorage.getItem('att_students') || 'null') || initial;
+    let records = JSON.parse(localStorage.getItem('att_records') || '{}');
+    let next = Math.max(...students.map(s => s.id), 0) + 1;
+
+    const $ = id => document.getElementById(id);
+
+    // Default date = today
+    let d = new Date();
+    $('date').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+    const day = () => $('date').value;
+    const mark = id => records[day()]?.[id] || '';
+
+    // Escape HTML
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[c]));
+
+    // Render table and stats
+    function render() {
+      let cls = $('class').value;
+      let q = $('search').value.toLowerCase();
+
+      let all = students.filter(s => cls === 'All' || s.cls === cls);
+      let visible = all.filter(s => (s.name+' '+s.roll+' '+s.cls).toLowerCase().includes(q));
+
+      $('rows').innerHTML = visible.map(s => {
+        let m = mark(s.id);
+        let badge = m==='Present' ? 'present' : m==='Absent' ? 'absent' : 'none';
+        return `
+          <tr>
+            <td>
+              <div class="student">${esc(s.name)}</div>
+              <div class="sub">Student record</div>
+            </td>
+            <td>${esc(s.roll)}</td>
+            <td>${esc(s.cls)}</td>
+            <td><span class="badge ${badge}">${m || 'Not marked'}</span></td>
+            <td>
+              <button class="mini ${m==='Present'?'primary':'secondary'}" data-id="${s.id}" data-mark="Present">Present</button>
+              <button class="mini ${m==='Absent'?'danger':'outline'}" data-id="${s.id}" data-mark="Absent">Absent</button>
+            </td>
+          </tr>`;
+      }).join('');
+
+      // Button handlers
+      $('rows').querySelectorAll('[data-id]').forEach(b => b.onclick = () => {
+        records[day()] ??= {};
+        records[day()][b.dataset.id] = b.dataset.mark;
+        render();
+      });
+
+      // Stats
+      let p = all.filter(s => mark(s.id)==='Present').length;
+      let a = all.filter(s => mark(s.id)==='Absent').length;
+      $('total').textContent = all.length;
+      $('pc').textContent = p;
+      $('ac').textContent = a;
+      $('rate').textContent = p+a ? Math.round(p/(p+a)*100)+'%' : '—';
+      $('statusmsg').textContent = 'Changes not saved · ' + day();
+    }
+
+    // Save to localStorage
+    function save() {
+      localStorage.setItem('att_students', JSON.stringify(students));
+      localStorage.setItem('att_records', JSON.stringify(records));
+      $('statusmsg').textContent = 'Saved in this browser · ' + day();
+    }
+
+    // Event handlers
+    $('save').onclick = save;
+    $('class').onchange = render;
+    $('date').onchange = render;
+    $('search').oninput = render;
+
+    $('allpresent').onclick = () => {
+      records[day()] ??= {};
+      students.filter(s => $('class').value==='All' || s.cls===$('class').value)
+              .forEach(s => records[day()][s.id] = 'Present');
+      render();
+    };
+
+    $('clear').onclick = () => {
+      if (confirm('Clear marks for this date?')) {
+        delete records[day()];
+        render();
+      }
+    };
+
+    $('add').onclick = () => $('dlg').showModal();
+    $('cancel').onclick = () => $('dlg').close();
+
+    $('form').onsubmit = e => {
+      e.preventDefault();
+      let name = $('name').value.trim();
+      let roll = $('roll').value.trim();
+      if (students.some(s => s.roll.toLowerCase() === roll.toLowerCase()))
+        return alert('Roll number already exists.');
+      students.push({id: next++, name, roll, cls: $('newclass').value});
+      save();
+      $('form').reset();
+      $('dlg').close();
+      render();
+    };
+
+    $('export').onclick = () => {
+      let data = [['Date','Student','Roll','Class','Status'],
+        ...students.map(s => [day(), s.name, s.roll, s.cls, mark(s.id)||'Not marked'])];
+      let csv = data.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\r\n');
+      let a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+      a.download = 'attendance-' + day() + '.csv';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+
+        $('reset').onclick = () => {
+      if (confirm('Reset all demo data?')) {
+        // Reset students back to initial demo list
+        students = initial.map(s => ({...s}));
+        records = {};
+        localStorage.removeItem('att_students');
+        localStorage.removeItem('att_records');
+        next = 10;
+        render();
+      }
+    };
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
+
